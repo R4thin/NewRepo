@@ -3,8 +3,8 @@
         Build script to generate a sample konotor app using cordova plugin
     </description>
     <property file="build.properties" />
-    <property name="app_id" value=""/>
-    <property name="app_key" value=""/>
+    <property name="app_id" value="f9238745-18c7-4037-8da0-a23dae7f48a6"/>
+    <property name="app_key" value="21edfa80-ec1b-4df2-b373-3a8fb1e2019f"/>
     <property name="app_name" value="Konotor App"/>
     <property name="app_package_name" value="com.konotor.innoventes"/>
     <property name="backup.dir" value="backup"/>
