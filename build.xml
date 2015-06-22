@@ -1,0 +1,250 @@
+<project name="konotor-sample-app" default="restore" basedir=".">
+    <description>
+        Build script to generate a sample konotor app using cordova plugin
+    </description>
+    <property file="build.properties" />
+    <property name="app_id" value=""/>
+    <property name="app_key" value=""/>
+    <property name="app_name" value="Konotor App"/>
+    <property name="app_package_name" value="com.konotor.innoventes"/>
+    <property name="backup.dir" value="backup"/>
+
+    <target name="backup-clean" description="Remove temporary folders">
+        <delete dir="${backup.dir}"/>
+    </target>
+
+    <target name="backup" depends="backup-clean"
+        description="Backup files being filtered to be restored after build">
+        <copy todir="${backup.dir}" file="www/img/konotorlogo.png"/>
+        <copy todir="${backup.dir}" file="www/js/design.js"/>
+        <copy todir="${backup.dir}" file="config.xml"/>
+    </target>
+
+    <target name="restore" depends="build" description="Restore the unfiltered files" >
+        <copy file="backup/konotorlogo.png" tofile="www/img/konotorlogo.png"  overwrite="true" />
+        <copy file="backup/design.js" tofile="www/js/design.js"  overwrite="true" />
+        <copy file="backup/config.xml" tofile="config.xml"  overwrite="true" />
+        <delete dir="backup"/>
+    </target>
+
+
+    <fail message="Usage: ant -Dapp_id=&quot;&lt;app_id&gt;&quot; -Dapp_key=&quot;&lt;app_key&gt;&quot; -Dcolor=&quot;&lt;color&gt;&quot; -Dapp_icon=&quot;&lt;path_of_app_icon&gt;&quot; -Dnoimage=&quot;&lt;boolean&gt;&quot; -Dnoaudio=&quot;&lt;boolean&gt;&quot; -Dfeedbackscreentitle=&quot;&lt;feedbackscreentitle&gt;&quot; -Dsupportname=&quot;&lt;supportname&gt;&quot; -Dappheading=&quot;&lt;appheading&gt;&quot; -Dapp_name=&quot;&lt;app_name&gt;&quot; -Dapp_package_name=&quot;&lt;app_package_name&gt;&quot; ${line.separator}${line.separator}Of these only app_id and app_key are mandatory">
+        <condition>
+          <or>
+            <equals arg1="${app_id}" arg2=""/>
+            <equals arg1="${app_key}" arg2=""/>
+         </or>
+        </condition>
+    </fail>
+
+    <condition property="isWindows" value="true">
+        <os family="Windows"/>
+    </condition>
+
+    <target name="clean" unless="${isWindows}">
+        <!-- Delete android platform -->
+        <exec executable="cordova">
+            <arg value="-d"/>
+            <arg value="platform"/>
+            <arg value="remove"/>
+            <arg value="android"/>
+        </exec>
+    </target>
+
+    <target name="clean-plugin" unless="${isWindows}">
+        <!-- Delete konotor plugin -->
+        <exec  executable="cordova">
+            <arg value="-d"/>
+            <arg value="plugin"/>
+            <arg value="rm"/>
+            <arg value="com.konotor.cordova"/>
+        </exec>
+    </target>
+
+    <target name="add-platform" depends="clean, clean-plugin,set-app-package-name-linux,set-app-name-linux" unless="${isWindows}">
+        <!-- Add android platform -->
+        <exec executable="cordova">
+            <arg value="-d"/>
+            <arg value="platform"/>
+            <arg value="add"/>
+            <arg value="android"/>
+        </exec>
+    </target>
+
+    <target name="add-plugin" depends="add-platform, set-no-image-linux,set-no-audio-linux,set-feedbackscreentitle-linux,set-supportname-linux,set-app-heading-linux,set-background-color-linux, set-app-icon-linux" unless="${isWindows}">
+        <!-- Add konotor plugin -->
+        <exec  executable="cordova">
+            <arg value="-d"/>
+            <arg value="plugin"/>
+            <arg value="add"/>
+            <arg value="https://github.com/konotor/phonegap-sdk.git"/>
+            <arg value="--variable"/>
+            <arg value="APP_ID=${app_id}"/>
+            <arg value="--variable"/>
+            <arg value="APP_KEY=${app_key}"/>
+        </exec>
+    </target>
+
+    <target name="debug-build" depends="backup,add-plugin, add-plugin-windows" unless="${isWindows}" description="compile the source " >
+        <!-- Build the android platform -->
+        <exec executable="cordova">
+            <arg value="-d"/>
+            <arg value="build"/>
+            <arg value="android"/>
+        </exec>
+    </target>
+
+    <target name="clean-windows" if="${isWindows}">
+        <!-- Delete android platform -->
+        <exec  executable="cmd">
+            <arg value="/C"/>
+            <arg value="cordova"/>
+            <arg value="-d"/>
+            <arg value="platform"/>
+            <arg value="remove"/>
+            <arg value="android"/>
+        </exec>
+    </target>
+
+    <target name="clean-plugin-windows" if="${isWindows}">
+        <!-- Delete konotor plugin -->
+        <exec  executable="cmd">
+            <arg value="/C"/>
+            <arg value="cordova"/>
+            <arg value="-d"/>
+            <arg value="plugin"/>
+            <arg value="rm"/>
+            <arg value="com.konotor.cordova"/>
+        </exec>
+    </target>
+
+    <target name="add-platform-windows" depends="clean-windows, clean-plugin-windows,set-app-name-windows,set-app-package-name-windows" if="${isWindows}">
+        <!-- Add android platform -->
+        <exec  executable="cmd">
+            <arg value="/C"/>
+            <arg value="cordova"/>
+            <arg value="-d"/>
+            <arg value="platform"/>
+            <arg value="add"/>
+            <arg value="android"/>
+        </exec>
+    </target>
+
+    <target name="add-plugin-windows" depends="add-platform-windows, set-background-color-windows, set-app-icon-windows,set-no-image-windows,set-no-audio-windows,set-feedbackscreentitle-windows,set-supportname-windows,set-app-heading-windows" if="${isWindows}">
+        <!-- Add konotor plugin -->
+        <exec  executable="cmd">
+            <arg value="/C"/>
+            <arg value="cordova"/>
+            <arg value="-d"/>
+            <arg value="plugin"/>
+            <arg value="add"/>
+            <arg value="https://github.com/konotor/phonegap-sdk.git"/>
+            <arg value="--variable"/>
+            <arg value="APP_ID=${app_id}"/>
+            <arg value="--variable"/>
+            <arg value="APP_KEY=${app_key}"/>
+        </exec>
+    </target>
+
+    <target name="debug-build-windows" depends="backup,add-plugin, add-plugin-windows" if="${isWindows}">
+        <!-- Build the android platform -->
+        <exec executable="cmd">
+            <arg value="/C"/>
+            <arg value="cordova"/>
+            <arg value="-d"/>
+            <arg value="build"/>
+            <arg value="android"/>
+        </exec>
+    </target>
+
+    <target name="build" depends="debug-build, debug-build-windows"/>
+
+    <target name="set-background-color-windows" if="color">
+        <echo message="Set background color to ${color}"/>
+        <replace file="www/js/design.js" token="@COLOR_CODE@" value="${color}"/>
+    </target>
+
+    <target name="set-background-color-linux" if="color" unless="${isWindows}">
+        <echo message="Set background color to ${color}"/>
+        <replace file="www/js/design.js" token="@COLOR_CODE@" value="${color}"/>
+    </target>
+
+    <target name="set-app-icon-windows" if="app_icon">
+        <echo message="Setting app icon to ${app_icon}"/>
+        <copy file="${app_icon}" tofile="www/img/konotorlogo.png" overwrite="true"/>
+    </target>
+
+    <target name="set-app-icon-linux" if="app_icon" unless="${isWindows}">
+        <echo message="Setting app icon to ${app_icon}"/>
+        <copy file="${app_icon}" tofile="www/img/konotorlogo.png"  overwrite="true" />
+    </target>
+
+    <target name="set-no-image-windows" if="noimage">
+        <echo message="Setting image option to ${noimage}"/>
+        <replace file="www/js/design.js" token="@NO_IMAGE@" value="${noimage}"/>
+    </target>
+
+    <target name="set-no-image-linux" if="noimage" unless="${isWindows}">
+        <echo message="Setting image option to ${noimage}"/>
+        <replace file="www/js/design.js" token="@NO_IMAGE@" value="${noimage}"/>
+    </target>
+
+    <target name="set-no-audio-windows" if="noaudio">
+        <echo message="Setting audio option to ${noaudio}"/>
+        <replace file="www/js/design.js" token="@NO_AUDIO@" value="${noaudio}"/>
+    </target>
+
+    <target name="set-no-audio-linux" if="noaudio" unless="${isWindows}">
+        <echo message="Setting audio option to ${noaudio}"/>
+        <replace file="www/js/design.js" token="@NO_AUDIO@" value="${noaudio}"/>
+    </target>
+
+    <target name="set-feedbackscreentitle-windows" if="feedbackscreentitle">
+        <echo message="Setting feedbackscreentitle to ${feedbackscreentitle}"/>
+        <replace file="www/js/design.js" token="@FEEDBACK_SCREEN_TITLE@" value="${feedbackscreentitle}"/>
+    </target>
+
+    <target name="set-feedbackscreentitle-linux" if="feedbackscreentitle" unless="${isWindows}">
+        <echo message="Setting feedbackscreentitle to ${feedbackscreentitle}"/>
+        <replace file="www/js/design.js" token="@FEEDBACK_SCREEN_TITLE@" value="${feedbackscreentitle}"/>
+    </target>
+
+    <target name="set-supportname-windows" if="supportname">
+        <echo message="Setting supportname to ${supportname}"/>
+        <replace file="www/js/design.js" token="@SUPPORT_NAME@" value="${supportname}"/>
+    </target>
+
+    <target name="set-supportname-linux" if="supportname" unless="${isWindows}">
+        <echo message="Setting supportname to ${supportname}"/>
+        <replace file="www/js/design.js" token="@SUPPORT_NAME@" value="${supportname}"/>
+    </target>
+
+    <target name="set-app-heading-windows" if="appheading">
+        <echo message="Setting appheading to ${appheading}"/>
+        <replace file="www/js/design.js" token="@STATUS_BAR_TITLE@" value="${appheading}"/>
+    </target>
+
+    <target name="set-app-heading-linux" if="appheading" unless="${isWindows}">
+        <echo message="Setting appheading to ${appheading}"/>
+        <replace file="www/js/design.js" token="@STATUS_BAR_TITLE@" value="${appheading}"/>
+    </target>
+    <target name="set-app-name-windows" if="app_name">
+        <echo message="Setting app name to ${app_name}"/>
+        <replace file="config.xml" token="@APP_NAME@" value="${app_name}"/>
+    </target>
+
+    <target name="set-app-name-linux" if="app_name" unless="${isWindows}">
+        <echo message="Setting app name to ${app_name}"/>
+        <replace file="config.xml" token="@APP_NAME@" value="${app_name}"/>
+    </target>
+    <target name="set-app-package-name-windows" if="app_package_name">
+        <echo message="Setting app package name to ${app_package_name}"/>
+        <replace file="config.xml" token="@APP_PACKAGE_NAME@" value="${app_package_name}"/>
+    </target>
+
+    <target name="set-app-package-name-linux" if="app_package_name" unless="${isWindows}">
+        <echo message="Setting app package name to ${app_package_name}"/>
+        <replace file="config.xml" token="@APP_PACKAGE_NAME@" value="${app_package_name}"/>
+    </target>
+</project>
+
